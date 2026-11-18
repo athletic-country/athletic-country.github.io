@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Athletic Country · Galería</title>
+  <meta name="description" content="Galería oficial de fotos de Athletic Country">
+  <link rel="icon" href="assets/escudo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <header class="top">
+    <a href="#/" class="brand" aria-label="Inicio">
+      <img src="assets/escudo.png" alt="" class="brand-logo">
+      <span class="brand-text">
+        <span class="brand-title" id="brandTitle">Athletic Country</span>
+        <span class="brand-sub">Galería</span>
+      </span>
+    </a>
+    <label class="sort">
+      <span class="visually-hidden">Ordenar</span>
+      <select id="sort">
+        <option value="new">Más recientes</option>
+        <option value="old">Más antiguas</option>
+        <option value="name">Nombre (A–Z)</option>
+      </select>
+    </label>
+  </header>
+
+  <main id="app">
+    <section class="hero" id="hero">
+      <img src="assets/escudo.png" alt="Escudo Athletic Country" class="hero-logo">
+      <h1 id="heroTitle">Athletic Country</h1>
+      <p id="heroSub">Galería oficial de fotos</p>
+    </section>
+
+    <nav class="crumbs" id="crumbs" aria-label="Ruta"></nav>
+
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="toolbar-info">
+        <h2 id="albumTitle"></h2>
+        <p id="albumMeta"></p>
+      </div>
+      <button class="btn btn-gold" id="zipBtn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
+        <span>Descargar álbum</span>
+      </button>
+    </div>
+
+    <section id="folders" class="folders"></section>
+    <section id="photos" class="photos"></section>
+
+    <div id="status" class="status" role="status"></div>
+  </main>
+
+  <footer class="foot">
+    <img src="assets/escudo.png" alt="" width="22">
+    <span>Athletic Country</span>
+  </footer>
+
+  <!-- Visor de fotos -->
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto">
+    <div class="lb-bar">
+      <div class="lb-info">
+        <strong id="lbName"></strong>
+        <span id="lbMeta"></span>
+      </div>
+      <div class="lb-actions">
+        <span class="lb-count" id="lbCount"></span>
+        <a class="btn btn-gold btn-sm" id="lbDownload" href="#" download>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
+          <span>Descargar</span>
+        </a>
+        <button class="icon-btn" id="lbClose" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="lb-stage" id="lbStage">
+      <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <img id="lbImg" alt="">
+      <div class="lb-spinner" id="lbSpinner"></div>
+      <button class="lb-nav lb-next" id="lbNext" aria-label="Siguiente">
+        <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
