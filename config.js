@@ -32,5 +32,6 @@ window.GALLERY_CONFIG = {
     { name: "Right Calzado y Accesorios Deportivos", logo: "assets/sponsors/right.png" },
     { name: "Steelmat", logo: "assets/sponsors/steelmat.png" },
     { name: "Pollería Los Abuelos", logo: "assets/sponsors/los-abuelos.png" },
+    { name: "Alan Zini Seguros Generales", logo: "assets/sponsors/alan-zini.png" },
   ],
 };
