@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#031040">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Athletic">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Athletic Country · Galería</title>
   <meta name="description" content="Galería oficial de fotos de Athletic Country">
   <link rel="icon" href="assets/escudo.png">
@@ -35,8 +42,10 @@
   <main id="app">
     <section class="hero" id="hero">
       <img src="assets/escudo.png" alt="Escudo Athletic Country" class="hero-logo">
-      <h1 id="heroTitle">Athletic Country</h1>
-      <p id="heroSub">Galería oficial de fotos</p>
+      <div class="hero-text">
+        <h1 id="heroTitle">Athletic Country</h1>
+        <p id="heroSub">Galería oficial de fotos</p>
+      </div>
     </section>
 
     <nav class="crumbs" id="crumbs" aria-label="Ruta"></nav>
@@ -46,10 +55,16 @@
         <h2 id="albumTitle"></h2>
         <p id="albumMeta"></p>
       </div>
+      <div class="toolbar-actions">
+      <button class="btn btn-ghost" id="selectBtn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>
+        <span>Seleccionar</span>
+      </button>
       <button class="btn btn-gold" id="zipBtn" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
         <span>Descargar álbum</span>
       </button>
+      </div>
     </div>
 
     <section id="folders" class="folders"></section>
@@ -92,6 +107,22 @@
       </button>
     </div>
   </div>
+
+  <!-- Barra de selección -->
+  <div class="selbar" id="selBar" hidden>
+    <button class="icon-btn" id="selCancel" aria-label="Cancelar selección">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <span class="selcount" id="selCount"></span>
+    <button class="btn btn-gold" id="selGo" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
+      <span>Descargar</span>
+    </button>
+  </div>
+
+  <button class="to-top" id="toTop" aria-label="Volver arriba">
+    <svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg>
+  </button>
 
   <div class="toast" id="toast" hidden></div>
 

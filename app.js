@@ -17,7 +17,8 @@
     lb: $("lightbox"), lbImg: $("lbImg"), lbName: $("lbName"), lbMeta: $("lbMeta"),
     lbCount: $("lbCount"), lbDownload: $("lbDownload"), lbClose: $("lbClose"),
     lbPrev: $("lbPrev"), lbNext: $("lbNext"), lbStage: $("lbStage"), lbSpinner: $("lbSpinner"),
-    toast: $("toast"),
+    toast: $("toast"), selectBtn: $("selectBtn"), selBar: $("selBar"), selCount: $("selCount"),
+    selGo: $("selGo"), selCancel: $("selCancel"), toTop: $("toTop"),
   };
 
   // Textos de la marca
@@ -165,6 +166,7 @@
     el.photos.innerHTML = "";
     el.status.innerHTML = "";
     el.toolbar.hidden = true;
+    if (selecting) setSelecting(false);
     el.crumbs.innerHTML = "";
 
     try {
@@ -196,6 +198,7 @@
         if (here?.createdTime) bits.push(fmtDate(new Date(here.createdTime)));
         el.albumMeta.textContent = bits.join(" · ");
         el.zipBtn.hidden = photos.length < 2;
+        el.selectBtn.hidden = !photos.length;
       }
 
       renderFolders(folders, token);
@@ -281,9 +284,17 @@
 
   el.photos.addEventListener("click", (e) => {
     const dl = e.target.closest("[data-dl]");
-    if (dl) { e.stopPropagation(); downloadPhoto(current.photos[+dl.dataset.dl]); return; }
     const fig = e.target.closest(".photo");
-    if (fig) openLightbox(+fig.dataset.i);
+    if (!fig) return;
+    if (selecting) { toggleSel(+fig.dataset.i, fig); return; }
+    if (dl) {
+      e.stopPropagation();
+      // En iPhone se abre la foto y se prepara para "Guardar foto"
+      if (CAN_SHARE) openLightbox(+dl.dataset.dl);
+      downloadPhoto(current.photos[+dl.dataset.dl]);
+      return;
+    }
+    openLightbox(+fig.dataset.i);
   });
 
   el.sort.addEventListener("change", () => {
@@ -322,6 +333,7 @@
     el.lbName.textContent = p.name;
     el.lbMeta.textContent = [fmtDate(p.date), p.w && p.h ? `${p.w}×${p.h}` : "", fmtSize(p.size)].filter(Boolean).join(" · ");
     el.lbCount.textContent = `${lbIndex + 1} / ${list.length}`;
+    if (!el.lbDownload.classList.contains("busy")) setLbBtn(prepared?.key === p.id ? "Guardar foto" : "Descargar");
     el.lbPrev.disabled = lbIndex === 0;
     el.lbNext.disabled = lbIndex === list.length - 1;
     // Precarga de la siguiente
@@ -353,6 +365,18 @@
 
   /* ---------------- Descargas ---------------- */
 
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const IS_TOUCH = matchMedia("(pointer: coarse)").matches;
+  const CAN_SHARE = IS_IOS && (() => {
+    try { return !!navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.jpg", { type: "image/jpeg" })] }); }
+    catch { return false; }
+  })();
+  const MAX_TOUCH = 10;
+  const safeName = (s) => s.replace(/[\\/:*?"<>|]/g, "_");
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  if (IS_TOUCH) el.zipBtn.remove();
+
   function saveBlob(blob, name) {
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: name });
@@ -366,53 +390,180 @@
     return r.blob();
   }
 
+  async function fetchAll(list, onProgress) {
+    const out = new Array(list.length);
+    let next = 0, done = 0, failed = 0;
+    const worker = async () => {
+      while (next < list.length) {
+        const i = next++;
+        try { out[i] = await fetchBlob(list[i]); } catch { failed++; }
+        onProgress?.(++done, list.length);
+      }
+    };
+    await Promise.all(Array.from({ length: 3 }, worker));
+    return { blobs: out, failed };
+  }
+
+  // En iPhone se usa el menú "Compartir" (Guardar imagen, WhatsApp, Instagram…).
+  // Safari exige que ese menú se abra con un toque directo, así que primero se
+  // prepara la foto y después se toca "Guardar".
+  let prepared = null; // { key, files }
+  const toFile = (blob, name) => new File([blob], name, { type: blob.type || "image/jpeg" });
+
+  async function shareFiles(files) {
+    try { await navigator.share({ files }); }
+    catch (e) { if (e.name !== "AbortError") files.forEach((f) => saveBlob(f, f.name)); }
+  }
+
+  function setLbBtn(text, busy = false) {
+    el.lbDownload.querySelector("span").textContent = text;
+    el.lbDownload.classList.toggle("busy", busy);
+  }
+
   async function downloadPhoto(p) {
     if (!p) return;
+    if (CAN_SHARE) {
+      if (prepared?.key === p.id) {
+        const files = prepared.files;
+        prepared = null;
+        setLbBtn("Descargar");
+        return shareFiles(files);
+      }
+      setLbBtn("Preparando…", true);
+      try {
+        const file = toFile(await fetchBlob(p), p.name);
+        prepared = { key: p.id, files: [file] };
+        if (current.photos[lbIndex]?.id === p.id) setLbBtn("Guardar foto");
+        toast("Lista: tocá «Guardar foto»", 2500);
+      } catch {
+        setLbBtn("Descargar");
+        toast("No se pudo descargar la foto", 3000);
+      }
+      return;
+    }
     toast(`Descargando ${p.name}…`);
     try {
       saveBlob(await fetchBlob(p), p.name);
       toast(null);
     } catch {
-      // Respaldo: descarga directa de Drive
       if (!DEMO) window.open(`https://drive.google.com/uc?export=download&id=${p.id}`, "_blank");
       toast(null);
     }
   }
 
-  el.zipBtn.addEventListener("click", async () => {
+  async function zipAndSave(list, name, setLabel) {
     if (!window.JSZip) return toast("No se pudo preparar el .zip", 3000);
-    const list = current.photos;
-    const label = el.zipBtn.querySelector("span");
-    el.zipBtn.disabled = true;
+    const { blobs, failed } = await fetchAll(list, (d, t) => setLabel(`Preparando ${d}/${t}`));
+    setLabel("Comprimiendo…");
     const zip = new JSZip();
     const used = new Set();
-    let done = 0, failed = 0;
-    const queue = [...list];
-    const worker = async () => {
-      while (queue.length) {
-        const p = queue.shift();
-        try {
-          let name = p.name;
-          for (let n = 2; used.has(name); n++) name = p.name.replace(/(\.\w+)?$/, ` (${n})$1`);
-          used.add(name);
-          zip.file(name, await fetchBlob(p));
-        } catch { failed++; }
-        label.textContent = `Preparando ${++done}/${list.length}`;
-      }
-    };
+    list.forEach((p, i) => {
+      if (!blobs[i]) return;
+      let n = p.name;
+      for (let k = 2; used.has(n); k++) n = p.name.replace(/(\.\w+)?$/, ` (${k})$1`);
+      used.add(n);
+      zip.file(n, blobs[i]);
+    });
+    const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+    saveBlob(blob, `${safeName(name)}.zip`);
+    if (failed) toast(`${failed} foto(s) no se pudieron incluir`, 4000);
+  }
+
+  el.zipBtn.addEventListener("click", async () => {
+    const label = el.zipBtn.querySelector("span");
+    el.zipBtn.disabled = true;
+    try { await zipAndSave(current.photos, current.name, (t) => (label.textContent = t)); }
+    catch { toast("No se pudo crear el .zip", 3000); }
+    finally { el.zipBtn.disabled = false; label.textContent = "Descargar álbum"; }
+  });
+
+  /* ---------------- Selección de varias fotos ---------------- */
+
+  let selecting = false;
+  const selected = new Set();
+  const selKey = () => "sel:" + [...selected].sort((a, b) => a - b).join(",");
+
+  function setSelecting(on) {
+    selecting = on;
+    selected.clear();
+    prepared = null;
+    document.body.classList.toggle("selecting", on);
+    el.photos.querySelectorAll(".photo.sel").forEach((f) => f.classList.remove("sel"));
+    el.selectBtn.querySelector("span").textContent = on ? "Cancelar" : "Seleccionar";
+    updateSelBar();
+  }
+
+  function toggleSel(i, fig) {
+    if (selected.has(i)) selected.delete(i);
+    else {
+      if (IS_TOUCH && selected.size >= MAX_TOUCH) return toast(`Podés elegir hasta ${MAX_TOUCH} fotos por vez`, 2500);
+      selected.add(i);
+    }
+    fig.classList.toggle("sel", selected.has(i));
+    prepared = null;
+    updateSelBar();
+  }
+
+  function updateSelBar() {
+    el.selBar.hidden = !selecting;
+    el.selCount.textContent = selected.size
+      ? plural(selected.size, "foto elegida", "fotos elegidas")
+      : IS_TOUCH ? `Tocá las fotos (hasta ${MAX_TOUCH})` : "Hacé clic en las fotos";
+    el.selGo.disabled = !selected.size;
+    el.selGo.querySelector("span").textContent =
+      prepared?.key === selKey() ? `Guardar ${selected.size}` : "Descargar";
+  }
+
+  el.selectBtn.addEventListener("click", () => setSelecting(!selecting));
+  el.selCancel.addEventListener("click", () => setSelecting(false));
+
+  el.selGo.addEventListener("click", async () => {
+    const list = [...selected].sort((a, b) => a - b).map((i) => current.photos[i]);
+    if (!list.length) return;
+    const label = el.selGo.querySelector("span");
+
+    if (CAN_SHARE && prepared?.key === selKey()) {
+      const files = prepared.files;
+      prepared = null;
+      await shareFiles(files);
+      setSelecting(false);
+      return;
+    }
+
+    el.selGo.disabled = true;
     try {
-      await Promise.all(Array.from({ length: 4 }, worker));
-      label.textContent = "Comprimiendo…";
-      const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-      saveBlob(blob, `${current.name.replace(/[\\/:*?"<>|]/g, "_")}.zip`);
-      if (failed) toast(`${failed} foto(s) no se pudieron incluir`, 4000);
+      if (CAN_SHARE) {
+        const { blobs, failed } = await fetchAll(list, (d, t) => (label.textContent = `Preparando ${d}/${t}`));
+        const files = list.map((p, i) => blobs[i] && toFile(blobs[i], p.name)).filter(Boolean);
+        if (!files.length) throw new Error();
+        prepared = { key: selKey(), files };
+        toast(failed ? `${failed} no se pudieron bajar. Tocá «Guardar»` : "Listas: tocá «Guardar»", 3000);
+        el.selGo.disabled = false;
+        updateSelBar();
+        return;
+      }
+      if (IS_TOUCH || list.length === 1) {
+        for (let i = 0; i < list.length; i++) {
+          label.textContent = `Descargando ${i + 1}/${list.length}`;
+          try { saveBlob(await fetchBlob(list[i]), list[i].name); } catch {}
+          await sleep(350);
+        }
+      } else {
+        await zipAndSave(list, `${current.name} (selección)`, (t) => (label.textContent = t));
+      }
+      setSelecting(false);
     } catch {
-      toast("No se pudo crear el .zip", 3000);
-    } finally {
-      el.zipBtn.disabled = false;
-      label.textContent = "Descargar álbum";
+      toast("No se pudieron descargar las fotos", 3000);
+      el.selGo.disabled = false;
+      updateSelBar();
     }
   });
+
+  /* ---------------- Volver arriba ---------------- */
+
+  const onScroll = () => el.toTop.classList.toggle("show", window.scrollY > 900);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  el.toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
   let toastTimer;
   function toast(msg, ms) {
@@ -464,6 +615,6 @@
     return { id, name: n.name, parents: n.parents, createdTime: n.createdTime };
   }
 
-  window.addEventListener("hashchange", () => { closeLightbox(); render(); window.scrollTo(0, 0); });
+  window.addEventListener("hashchange", () => { closeLightbox(); setSelecting(false); render(); window.scrollTo(0, 0); });
   render();
 })();

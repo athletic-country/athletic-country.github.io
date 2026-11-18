@@ -1,0 +1,15 @@
+{
+  "name": "Athletic Country · Galería",
+  "short_name": "Athletic",
+  "description": "Galería oficial de fotos de Athletic Country",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061a5c",
+  "theme_color": "#031040",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
