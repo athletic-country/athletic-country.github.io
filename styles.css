@@ -200,7 +200,8 @@ main { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 var(-
 }
 .sponsors h2::before, .sponsors h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(214,162,74,.55)); }
 .sponsors h2::after { background: linear-gradient(90deg, rgba(214,162,74,.55), transparent); }
-.sponsors-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.sponsors-grid { --cols: 6; --gap: 14px; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }
+.sponsors-grid > .sponsor { flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); }
 .sponsor {
   display: grid; place-items: center; aspect-ratio: 3 / 2; padding: 16px 18px; border-radius: 12px;
   background: linear-gradient(160deg, rgba(18,64,176,.35), rgba(3,16,64,.75)); text-decoration: none; color: var(--text);
@@ -211,11 +212,11 @@ a.sponsor:hover { transform: translateY(-3px); border-color: var(--gold-light); 
 .sponsor { position: relative; min-width: 0; overflow: hidden; }
 .sponsor img { position: absolute; inset: 14%; width: 72%; height: 72%; object-fit: contain; display: block; }
 .sponsor .fallback { font-family: "Oswald", sans-serif; font-weight: 600; text-transform: uppercase; text-align: center; font-size: .9rem; }
-@media (max-width: 900px) { .sponsors-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 900px) { .sponsors-grid { --cols: 4; } }
 @media (max-width: 600px) {
   .sponsors { padding-bottom: 32px; }
   .sponsors h2 { font-size: .8rem; letter-spacing: .22em; margin-bottom: 16px; }
-  .sponsors-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sponsors-grid { --cols: 3; --gap: 8px; }
   .sponsor { padding: 8px; border-radius: 9px; }
 }
 

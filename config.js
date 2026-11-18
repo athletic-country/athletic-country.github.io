@@ -31,5 +31,6 @@ window.GALLERY_CONFIG = {
     { name: "Jardines del Litoral", logo: "assets/sponsors/jardines-del-litoral.png" },
     { name: "Right Calzado y Accesorios Deportivos", logo: "assets/sponsors/right.png" },
     { name: "Steelmat", logo: "assets/sponsors/steelmat.png" },
+    { name: "Pollería Los Abuelos", logo: "assets/sponsors/los-abuelos.png" },
   ],
 };
