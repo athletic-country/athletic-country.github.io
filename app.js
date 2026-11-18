@@ -6,6 +6,8 @@
   const ROOT = DEMO ? "demo-root" : CFG.rootFolderId;
   const API = "https://www.googleapis.com/drive/v3/files";
   const FOLDER = "application/vnd.google-apps.folder";
+  const SHORTCUT = "application/vnd.google-apps.shortcut";
+  const parentOf = new Map(); // carpeta -> carpeta desde la que se llegó (sirve para accesos directos)
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -34,19 +36,24 @@
     let pageToken = "";
     do {
       const p = new URLSearchParams({
-        q: `'${folderId}' in parents and trashed = false and (mimeType = '${FOLDER}' or mimeType contains 'image/')`,
+        q: `'${folderId}' in parents and trashed = false and (mimeType = '${FOLDER}' or mimeType = '${SHORTCUT}' or mimeType contains 'image/')`,
         key: CFG.apiKey,
         pageSize: "1000",
         orderBy: "folder,name_natural",
         supportsAllDrives: "true",
         includeItemsFromAllDrives: "true",
-        fields: "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height,time,rotation))",
+        fields: "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height,time,rotation),shortcutDetails)",
       });
       if (pageToken) p.set("pageToken", pageToken);
       const r = await fetch(`${API}?${p}`);
       if (!r.ok) throw await apiError(r);
       const j = await r.json();
-      files.push(...j.files);
+      for (const f of j.files) {
+        if (f.mimeType !== SHORTCUT) { files.push(f); continue; }
+        // Acceso directo a una carpeta: se trata como carpeta normal
+        const t = f.shortcutDetails || {};
+        if (t.targetMimeType === FOLDER) files.push({ ...f, id: t.targetId, mimeType: FOLDER });
+      }
       pageToken = j.nextPageToken || "";
     } while (pageToken);
     return files;
@@ -72,6 +79,7 @@
     const p = (async () => {
       const raw = DEMO ? await demoList(id) : await driveList(id);
       const folders = raw.filter((f) => f.mimeType === FOLDER);
+      folders.forEach((f) => parentOf.set(f.id, { id, name: f.name }));
       const photos = raw.filter((f) => f.mimeType !== FOLDER).map(normalizePhoto);
       return { folders, photos };
     })();
@@ -90,7 +98,10 @@
     const chain = [];
     let cur = id;
     for (let i = 0; i < 12 && cur && cur !== ROOT; i++) {
-      const m = await loadMeta(cur);
+      let m;
+      try { m = await loadMeta(cur); } catch (e) { if (i === 0) throw e; break; }
+      const via = parentOf.get(cur);
+      if (via) m = { ...m, name: via.name, parents: [via.id] };
       chain.unshift(m);
       cur = m.parents?.[0];
     }
@@ -219,6 +230,7 @@
         if (token !== renderToken) return;
         const card = el.folders.querySelector(`[data-id="${f.id}"]`);
         if (!card) return;
+        if (!d.folders.length && !d.photos.length) { card.remove(); return; }
         const badge = card.querySelector(".album-badge");
         const parts = [];
         if (d.folders.length) parts.push(plural(d.folders.length, "álbum", "álbumes"));

@@ -9,5 +9,5 @@ window.GALLERY_CONFIG = {
   rootFolderId: "1guvMJAcigfTlj4Bi4GqC_tHFXJZZsKiw",
 
   // API key de Google Cloud con "Google Drive API" habilitada
-  apiKey: "",
+  apiKey: "AIzaSyBiN2GcgzunGfdpz5T-ik3fcWgkIu20zj0",
 };
