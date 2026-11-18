@@ -6,7 +6,7 @@ window.GALLERY_CONFIG = {
   subtitle: "Galería oficial de fotos",
 
   // ID de la carpeta raíz de Google Drive (lo que va después de /folders/ en el enlace)
-  rootFolderId: "",
+  rootFolderId: "1guvMJAcigfTlj4Bi4GqC_tHFXJZZsKiw",
 
   // API key de Google Cloud con "Google Drive API" habilitada
   apiKey: "",
