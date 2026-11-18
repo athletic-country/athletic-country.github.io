@@ -19,6 +19,7 @@
     lbPrev: $("lbPrev"), lbNext: $("lbNext"), lbStage: $("lbStage"), lbSpinner: $("lbSpinner"),
     toast: $("toast"), selectBtn: $("selectBtn"), selBar: $("selBar"), selCount: $("selCount"),
     selGo: $("selGo"), selCancel: $("selCancel"), toTop: $("toTop"),
+    sponsors: $("sponsors"), sponsorsGrid: $("sponsorsGrid"),
   };
 
   // Textos de la marca
@@ -162,6 +163,7 @@
     const isRoot = id === ROOT;
 
     el.hero.hidden = !isRoot;
+    el.sponsors.hidden = !isRoot || !el.sponsorsGrid.children.length;
     el.folders.innerHTML = Array.from({ length: isRoot ? 6 : 3 }, () => '<div class="skeleton"></div>').join("");
     el.photos.innerHTML = "";
     el.status.innerHTML = "";
@@ -615,6 +617,49 @@
     return { id, name: n.name, parents: n.parents, createdTime: n.createdTime };
   }
 
+  /* ---------------- Sponsors ---------------- */
+
+  function renderSponsors(list) {
+    el.sponsorsGrid.innerHTML = list.map(({ name, src, url }) => {
+      const img = `<img src="${esc(src)}" alt="${esc(name)}" loading="lazy"
+        onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:this.alt}))">`;
+      return url
+        ? `<a class="sponsor" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(name)}">${img}</a>`
+        : `<div class="sponsor" title="${esc(name)}">${img}</div>`;
+    }).join("");
+    el.sponsors.hidden = !!location.hash.match(/^#\/f\//) || !list.length;
+  }
+
+  async function loadSponsors() {
+    // 1) Lista fija en config.js (logos guardados en assets/sponsors/)
+    if (Array.isArray(CFG.sponsors) && CFG.sponsors.length) {
+      return renderSponsors(CFG.sponsors.map((s) => ({
+        name: s.name, src: s.logo, url: s.link || (s.instagram ? `https://instagram.com/${s.instagram.replace(/^@/, "")}` : ""),
+      })));
+    }
+    // 2) O una carpeta de Drive con los logos
+    if (DEMO || !CFG.sponsorsFolderId) return;
+    try {
+      const p = new URLSearchParams({
+        q: `'${CFG.sponsorsFolderId}' in parents and trashed = false and mimeType contains 'image/'`,
+        key: CFG.apiKey, pageSize: "100", orderBy: "name_natural",
+        supportsAllDrives: "true", includeItemsFromAllDrives: "true",
+        fields: "files(id,name,description)",
+      });
+      const r = await fetch(`${API}?${p}`);
+      if (!r.ok) return;
+      const { files = [] } = await r.json();
+      renderSponsors(files.map((f) => {
+        let name = f.name.replace(/\.[^.]+$/, "").replace(/^\s*\d+\s*[-_.)]?\s*/, "");
+        const ig = name.match(/@([\w.]+)/);
+        name = name.replace(/@[\w.]+/, "").replace(/[\s\-–]+$/, "").trim();
+        const url = (f.description || "").match(/https?:\/\/\S+/)?.[0] || (ig ? `https://instagram.com/${ig[1]}` : "");
+        return { name, src: `${API}/${f.id}?alt=media&key=${CFG.apiKey}`, url };
+      }));
+    } catch {}
+  }
+
   window.addEventListener("hashchange", () => { closeLightbox(); setSelecting(false); render(); window.scrollTo(0, 0); });
   render();
+  loadSponsors();
 })();
