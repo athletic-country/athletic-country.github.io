@@ -18,5 +18,18 @@ window.GALLERY_CONFIG = {
 
   // O lista fija de sponsors (tiene prioridad sobre la carpeta de Drive).
   // { name: "Nombre", logo: "assets/sponsors/archivo.png", instagram: "usuario" o link: "https://..." }
-  sponsors: [],
+  sponsors: [
+    { name: "Amstel", logo: "assets/sponsors/amstel.png" },
+    { name: "Chopy", logo: "assets/sponsors/chopy.png" },
+    { name: "Country Indumentaria Deportiva", logo: "assets/sponsors/country.png", instagram: "country.ind.deportiva" },
+    { name: "Cristalería San Carlos", logo: "assets/sponsors/san-carlos.png", link: "https://www.sancarlos.com.ar" },
+    { name: "El Galpón Frutas y Verduras", logo: "assets/sponsors/el-galpon.png" },
+    { name: "El Vasco Pinturería", logo: "assets/sponsors/el-vasco.png" },
+    { name: "Exquisitos Placeres", logo: "assets/sponsors/exquisitos-placeres.png" },
+    { name: "Franco Colella", logo: "assets/sponsors/franco-colella.png" },
+    { name: "Giancarelli Gestoría SRL", logo: "assets/sponsors/giancarelli.png" },
+    { name: "Jardines del Litoral", logo: "assets/sponsors/jardines-del-litoral.png" },
+    { name: "Right Calzado y Accesorios Deportivos", logo: "assets/sponsors/right.png" },
+    { name: "Steelmat", logo: "assets/sponsors/steelmat.png" },
+  ],
 };
